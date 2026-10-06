@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title><%= product ? 'Редактирование' : 'Добавление' %> товара</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="logo">📚 Магазин книг</div>
+        <div class="user-info">
+            <span><%= user.full_name %></span>
+            <a href="/products" class="btn btn-outline">← Назад</a>
+        </div>
+    </header>
+
+    <div class="form-container">
+        <h1><%= product ? 'Редактирование' : 'Добавление' %> товара</h1>
+        <form method="POST" enctype="multipart/form-data"
+              action="<%= product ? '/products/' + product.id : '/products' %>">
+
+            <label>Артикул *</label>
+            <input type="text" name="article" required value="<%= product ? product.article : '' %>">
+
+            <label>Наименование *</label>
+            <input type="text" name="name" required value="<%= product ? product.name : '' %>">
+
+            <label>Цена *</label>
+            <input type="number" step="0.01" name="price" required value="<%= product ? product.price : '' %>">
+
+            <label>Скидка (%)</label>
+            <input type="number" name="discount" min="0" max="100" value="<%= product ? product.discount : 0 %>">
+
+            <label>Остаток на складе</label>
+            <input type="number" name="stock_quantity" min="0" value="<%= product ? product.stock_quantity : 0 %>">
+
+            <label>Категория</label>
+            <select name="category_id" required>
+                <% categories.forEach(c => { %>
+                    <option value="<%= c.id %>" <%= product && product.category_id == c.id ? 'selected' : '' %>>
+                        <%= c.name %>
+                    </option>
+                <% }); %>
+            </select>
+
+            <label>Поставщик</label>
+            <select name="supplier_id" required>
+                <% suppliers.forEach(s => { %>
+                    <option value="<%= s.id %>" <%= product && product.supplier_id == s.id ? 'selected' : '' %>>
+                        <%= s.name %>
+                    </option>
+                <% }); %>
+            </select>
+
+            <label>Издательство</label>
+            <select name="manufacturer_id" required>
+                <% manufacturers.forEach(m => { %>
+                    <option value="<%= m.id %>" <%= product && product.manufacturer_id == m.id ? 'selected' : '' %>>
+                        <%= m.name %>
+                    </option>
+                <% }); %>
+            </select>
+
+            <label>Описание</label>
+            <textarea name="description" rows="4"><%= product ? product.description : '' %></textarea>
+
+            <label>Фото</label>
+            <input type="file" name="photo" accept="image/*">
+            <% if (product && product.photo) { %>
+                <div class="current-photo">
+                    <p>Текущее фото:</p>
+                    <img src="/uploads/<%= product.photo %>" style="max-width:150px">
+                </div>
+            <% } %>
+
+            <button type="submit" class="btn btn-primary">
+                <%= product ? 'Сохранить изменения' : 'Добавить товар' %>
+            </button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title><%= order ? 'Редактирование' : 'Добавление' %> заказа</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="logo">📚 Магазин книг</div>
+        <div class="user-info">
+            <span><%= user.full_name %></span>
+            <a href="/orders" class="btn btn-outline">← Назад</a>
+        </div>
+    </header>
+
+    <div class="form-container">
+        <h1><%= order ? 'Редактирование' : 'Добавление' %> заказа</h1>
+        <form method="POST" action="<%= order ? '/orders/' + order.id : '/orders' %>">
+
+            <label>Дата заказа</label>
+            <input type="date" name="order_date"
+                   value="<%= order && order.order_date ? (order.order_date.toISOString ? order.order_date.toISOString().split('T')[0] : order.order_date) : '' %>">
+
+            <label>Дата доставки *</label>
+            <input type="date" name="delivery_date" required
+                   value="<%= order && order.delivery_date ? (order.delivery_date.toISOString ? order.delivery_date.toISOString().split('T')[0] : order.delivery_date) : '' %>">
+
+            <label>Адрес пункта выдачи</label>
+            <select name="pickup_point_id" required>
+                <% points.forEach(p => { %>
+                    <option value="<%= p.id %>" <%= order && order.pickup_point_id == p.id ? 'selected' : '' %>>
+                        <%= p.address %>
+                    </option>
+                <% }); %>
+            </select>
+
+            <label>Клиент</label>
+            <select name="user_id" required>
+                <% users.forEach(u => { %>
+                    <option value="<%= u.id %>" <%= order && order.user_id == u.id ? 'selected' : '' %>>
+                        <%= u.full_name %>
+                    </option>
+                <% }); %>
+            </select>
+
+            <label>Код получения *</label>
+            <input type="number" name="pickup_code" required
+                   value="<%= order ? order.pickup_code : '' %>">
+
+            <label>Статус</label>
+            <select name="status_id" required>
+                <% statuses.forEach(s => { %>
+                    <option value="<%= s.id %>" <%= order && order.status_id == s.id ? 'selected' : '' %>>
+                        <%= s.name %>
+                    </option>
+                <% }); %>
+            </select>
+
+            <h3>Состав заказа</h3>
+            <div id="itemsContainer">
+                <% if (items && items.length > 0) { %>
+                    <% items.forEach((it) => { %>
+                        <div class="item-row">
+                            <select name="product_id">
+                                <% products.forEach(p => { %>
+                                    <option value="<%= p.id %>" <%= it.product_id == p.id ? 'selected' : '' %>>
+                                        <%= p.name %> (<%= p.article %>) — <%= p.price %> ₽
+                                    </option>
+                                <% }); %>
+                            </select>
+                            <input type="number" name="quantity" min="1" value="<%= it.quantity %>">
+                            <button type="button" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="item-row">
+                        <select name="product_id">
+                            <% products.forEach(p => { %>
+                                <option value="<%= p.id %>">
+                                    <%= p.name %> (<%= p.article %>) — <%= p.price %> ₽
+                                </option>
+                            <% }); %>
+                        </select>
+                        <input type="number" name="quantity" min="1" value="1">
+                        <button type="button" onclick="this.parentElement.remove()">✖</button>
+                    </div>
+                <% } %>
+            </div>
+            <button type="button" class="btn" onclick="addItem()">+ Добавить позицию</button>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:20px">
+                <%= order ? 'Сохранить' : 'Создать заказ' %>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const productsHtml = `<% products.forEach(p => { %> <option value="<%= p.id %>"><%= p.name %> (<%= p.article %>) — <%= p.price %> ₽</option> <% }); %>`;
+        function addItem() {
+            const div = document.createElement('div');
+            div.className = 'item-row';
+            div.innerHTML = `
+                <select name="product_id">${productsHtml}</select>
+                <input type="number" name="quantity" min="1" value="1">
+                <button type="button" onclick="this.parentElement.remove()">✖</button>
+            `;
+            document.getElementById('itemsContainer').appendChild(div);
+        }
+    </script>
+</body>
+</html>

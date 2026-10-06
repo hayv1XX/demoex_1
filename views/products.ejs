@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Товары</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="logo">📚 Магазин книг</div>
+        <div class="user-info">
+            <span><%= user.full_name %></span>
+            <span class="role"><%= user.role %></span>
+            <% if (user.role === 'Администратор' || user.role === 'Менеджер') { %>
+                <a href="/orders" class="btn">Заказы</a>
+            <% } %>
+            <a href="/logout" class="btn btn-outline">Выйти</a>
+        </div>
+    </header>
+
+    <div class="toolbar">
+        <input type="text" id="search" placeholder="🔍 Поиск по названию / артикулу">
+        <select id="filterCategory">
+            <option value="">Все категории</option>
+            <% categories.forEach(c => { %>
+                <option value="<%= c.name %>"><%= c.name %></option>
+            <% }); %>
+        </select>
+        <select id="sortBy">
+            <option value="">Без сортировки</option>
+            <option value="price_asc">Цена ↑</option>
+            <option value="price_desc">Цена ↓</option>
+            <option value="name_asc">Название А-Я</option>
+            <option value="name_desc">Название Я-А</option>
+            <option value="stock_asc">Остаток ↑</option>
+            <option value="stock_desc">Остаток ↓</option>
+        </select>
+        <% if (user.role === 'Администратор') { %>
+            <a href="/products/new" class="btn btn-primary">+ Добавить товар</a>
+        <% } %>
+    </div>
+
+    <div class="products-grid" id="productsGrid">
+        <% products.forEach(p => {
+            const finalPrice = (p.price * (100 - p.discount) / 100).toFixed(2);
+            const hasDiscount = p.discount > 0;
+            const bigDiscount = p.discount > 15;
+            const outOfStock = p.stock_quantity === 0;
+        %>
+            <div class="product-card <%= bigDiscount ? 'big-discount' : '' %> <%= outOfStock ? 'out-of-stock' : '' %>"
+                 data-name="<%= p.name.toLowerCase() %>"
+                 data-article="<%= p.article.toLowerCase() %>"
+                 data-category="<%= p.category_name %>"
+                 data-price="<%= p.price %>"
+                 data-stock="<%= p.stock_quantity %>">
+
+                <img src="/uploads/<%= p.photo || 'placeholder.png' %>"
+                     alt="<%= p.name %>" class="product-img"
+                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect width=%22200%22 height=%22200%22 fill=%22%23ddd%22/><text x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23666%22 font-size=%2216%22>Нет фото</text></svg>'">
+
+                <div class="product-body">
+                    <div class="product-article">Артикул: <%= p.article %></div>
+                    <div class="product-name"><%= p.name %></div>
+                    <div class="product-cat">Категория: <%= p.category_name %></div>
+                    <div class="product-desc"><%= p.description ? p.description.substring(0,100) + '...' : '' %></div>
+
+                    <div class="price-row">
+                        <% if (hasDiscount) { %>
+                            <span class="old-price"><%= p.price %> ₽</span>
+                            <span class="final-price"><%= finalPrice %> ₽</span>
+                        <% } else { %>
+                            <span class="final-price"><%= p.price %> ₽</span>
+                        <% } %>
+                    </div>
+
+                    <div class="product-info">
+                        <span>Скидка: <%= p.discount %>%</span>
+                        <span>Остаток: <%= p.stock_quantity %> шт.</span>
+                    </div>
+                    <div class="product-info"><span>Поставщик: <%= p.supplier_name %></span></div>
+                    <div class="product-info"><span>Издательство: <%= p.manufacturer_name %></span></div>
+
+                    <% if (user.role === 'Администратор') { %>
+                        <div class="actions">
+                            <a href="/products/<%= p.product_id %>/edit" class="btn btn-sm">✏️ Изменить</a>
+                            <form method="POST" action="/products/<%= p.product_id %>/delete"
+                                  onsubmit="return confirm('Удалить товар?')" style="display:inline">
+                                <button class="btn btn-sm btn-danger">🗑 Удалить</button>
+                            </form>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('search');
+        const filterCat = document.getElementById('filterCategory');
+        const sortBy = document.getElementById('sortBy');
+        const grid = document.getElementById('productsGrid');
+        let currentSort = '';
+
+        function applyFilters() {
+            const q = searchInput.value.toLowerCase().trim();
+            const cat = filterCat.value;
+            let cards = Array.from(grid.children);
+
+            cards.forEach(card => {
+                const okName = card.dataset.name.includes(q) || card.dataset.article.includes(q);
+                const okCat = !cat || card.dataset.category === cat;
+                card.style.display = (okName && okCat) ? '' : 'none';
+            });
+
+            if (currentSort) {
+                const visible = cards.filter(c => c.style.display !== 'none');
+                visible.sort((a, b) => {
+                    const [field, dir] = currentSort.split('_');
+                    let va = a.dataset[field], vb = b.dataset[field];
+                    if (field === 'price' || field === 'stock') {
+                        va = parseFloat(va); vb = parseFloat(vb);
+                    }
+                    if (va < vb) return dir === 'asc' ? -1 : 1;
+                    if (va > vb) return dir === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                visible.forEach(c => grid.appendChild(c));
+            }
+        }
+
+        searchInput.addEventListener('input', applyFilters);
+        filterCat.addEventListener('change', applyFilters);
+        sortBy.addEventListener('change', () => { currentSort = sortBy.value; applyFilters(); });
+    </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заказы</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="logo">📚 Магазин книг</div>
+        <div class="user-info">
+            <span><%= user.full_name %></span>
+            <span class="role"><%= user.role %></span>
+            <a href="/products" class="btn">Товары</a>
+            <a href="/logout" class="btn btn-outline">Выйти</a>
+        </div>
+    </header>
+
+    <div class="toolbar">
+        <h1>Заказы</h1>
+        <a href="/orders/new" class="btn btn-primary">+ Добавить заказ</a>
+    </div>
+
+    <table class="orders-table">
+        <thead>
+            <tr>
+                <th>№</th>
+                <th>Дата заказа</th>
+                <th>Дата доставки</th>
+                <th>Адрес пункта выдачи</th>
+                <th>Клиент</th>
+                <th>Код получения</th>
+                <th>Статус</th>
+                <th>Товары</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+        <% orders.forEach(o => { %>
+            <tr>
+                <td><%= o.order_id %></td>
+                <td><%= o.order_date ? (o.order_date.toISOString ? o.order_date.toISOString().split('T')[0] : o.order_date) : '—' %></td>
+                <td><%= o.delivery_date.toISOString ? o.delivery_date.toISOString().split('T')[0] : o.delivery_date %></td>
+                <td><%= o.address %></td>
+                <td><%= o.full_name %></td>
+                <td><%= o.pickup_code %></td>
+                <td><%= o.status_name %></td>
+                <td>
+                    <ul class="items-list">
+                    <% o.items.forEach(i => { %>
+                        <li><%= i.name %> — <%= i.quantity %> шт.</li>
+                    <% }); %>
+                    </ul>
+                </td>
+                <td>
+                    <a href="/orders/<%= o.order_id %>/edit" class="btn btn-sm">✏️</a>
+                    <form method="POST" action="/orders/<%= o.order_id %>/delete"
+                          onsubmit="return confirm('Удалить заказ?')" style="display:inline">
+                        <button class="btn btn-sm btn-danger">🗑</button>
+                    </form>
+                </td>
+            </tr>
+        <% }); %>
+        </tbody>
+    </table>
+</body>
+</html>
